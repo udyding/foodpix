@@ -4,6 +4,7 @@ export type Picture = {
   owner: Types.ObjectId
   title: string
   description: string
+  fileName: string
   keywords: string[]
 }
 
