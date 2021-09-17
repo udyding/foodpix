@@ -1,6 +1,7 @@
 import { getSession } from 'next-auth/client'
 import { PictureModel } from '../../../models/Picture'
 import dbConnect from '../../../middleware/dbConnect'
+import getVisionLabels from '../getPictureLabels/getVisionLabels'
 import { uploadPictureToS3 } from './s3PictureService'
 import formidable from 'formidable'
 import fs from 'fs'
@@ -17,7 +18,8 @@ export const addPictureToDatabase = async (
   user,
   title,
   description,
-  fileName
+  fileName,
+  labels
 ) => {
   await dbConnect()
 
@@ -27,7 +29,7 @@ export const addPictureToDatabase = async (
     title: title,
     description: description,
     fileName: fileName,
-    keywords: [],
+    keywords: labels,
   })
 
   newPicture.save(async function (err, doc) {
@@ -53,7 +55,7 @@ export default async (req, res) => {
   const form = new formidable()
   form.uploadDir = 'bucketFolder/'
   form.keepExtensions = true
-  form.maxFileSize = 1 * 1024 * 1024
+  form.maxFileSize = 1 * 1024 * 1024 // max 1MB
   form.parse(req, async (err, fields, file) => {
     if (err) {
       return res.status(500).send(err)
@@ -70,11 +72,13 @@ export default async (req, res) => {
       const newFileName = `${uuidv4()}` // prevents duplicate file names
       const data = await uploadPictureToS3(fileContent, newFileName)
       console.log(data)
+      const labels = await getVisionLabels(filePath) // get google vision API labels
       await addPictureToDatabase(
         user,
         fields.title,
         fields.description,
-        newFileName
+        newFileName,
+        labels
       )
       const deleteFileFromBucketFolder = util.promisify(fs.unlink)
       await deleteFileFromBucketFolder(filePath)

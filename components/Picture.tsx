@@ -13,7 +13,7 @@ const Picture = ({ id, title }) => {
 
   return (
     <div>
-      <Link href={`/myGallery/${id}`}>
+      <Link href={`/picture/${id}`}>
         <a>
           <h3>{title}</h3>
         </a>
