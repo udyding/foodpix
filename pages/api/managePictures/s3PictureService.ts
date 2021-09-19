@@ -18,3 +18,21 @@ export const uploadPictureToS3 = async (fileContent, fileName) => {
     console.log(err)
   }
 }
+
+export const getPictureFromS3 = async (fileKey) => {
+  const params = {
+    Key: fileKey,
+    Bucket: process.env.AWS_BUCKET_NAME,
+  }
+  const readStream = s3.getObject(params).createReadStream()
+  return readStream
+}
+
+export const getPresignedUrl = async (fileKey) => {
+  const params = {
+    Key: fileKey,
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Expires: 100, // seconds
+  }
+  return s3.getSignedUrlPromise('getObject', params)
+}

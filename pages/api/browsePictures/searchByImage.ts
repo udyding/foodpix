@@ -1,11 +1,10 @@
-import { getSession } from 'next-auth/client'
 import { PictureModel } from '../../../models/Picture'
 import dbConnect from '../../../middleware/dbConnect'
+import { getPresignedUrl } from '../managePictures/s3PictureService'
+
 import getVisionLabels from '../getPictureLabels/getVisionLabels'
-import { uploadPictureToS3 } from './s3PictureService'
 import formidable from 'formidable'
 import fs from 'fs'
-import { v4 as uuidv4 } from 'uuid'
 import util from 'util'
 
 export const config = {
@@ -14,40 +13,27 @@ export const config = {
   },
 }
 
-export const addPictureToDatabase = async (
-  user,
-  title,
-  description,
-  fileName,
-  labels
-) => {
+const findPicturesFromKeywords = async (keywords) => {
   await dbConnect()
-
-  // ensure given request is POST
-  const newPicture = new PictureModel({
-    owner: user.id,
-    title: title,
-    description: description,
-    fileName: fileName,
-    keywords: labels,
-  })
-
-  newPicture.save(async function (err, doc) {
-    /* eslint-disable no-console */
-    if (err) {
-      console.log(err)
-    }
-    console.log(doc)
-    /* eslint-enable no-console */
-  })
+  // find documents that contain at least 3 common keywords
+  const pictures = await PictureModel.aggregate([
+    { $match: { 'keywords.2': { $exists: true } } },
+    {
+      $redact: {
+        $cond: [
+          {
+            $gte: [{ $size: { $setIntersection: ['$keywords', keywords] } }, 3],
+          },
+          '$$KEEP',
+          '$$PRUNE',
+        ],
+      },
+    },
+  ])
+  return pictures
 }
 
 export default async (req, res) => {
-  const user = await getSession({ req })
-  if (!user) {
-    return res.json({ error: 'not logged in' })
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).end()
   }
@@ -67,20 +53,22 @@ export default async (req, res) => {
     }
     try {
       const filePath = file.picture.path
-      const fileContent = fs.createReadStream(filePath)
-      const newFileName = `${uuidv4()}` // prevents duplicate file names
-      const data = await uploadPictureToS3(fileContent, newFileName)
       const labels = await getVisionLabels(filePath) // get google vision API labels
-      await addPictureToDatabase(
-        user,
-        fields.title,
-        fields.description,
-        newFileName,
-        labels
-      )
       const deleteFileFromBucketFolder = util.promisify(fs.unlink)
       await deleteFileFromBucketFolder(filePath)
-      return res.status(200).send(data)
+      const searchResults = await findPicturesFromKeywords(labels)
+      const searchResultsLen = searchResults.length
+      const presignedUrls = []
+      for (let i = 0; i < searchResultsLen; i++) {
+        const presignedUrl = await getPresignedUrl(searchResults[i].fileName)
+        presignedUrls.push(presignedUrl)
+      }
+      const resultsWithStreams = searchResults.map((pictureDetails, i) => [
+        pictureDetails,
+        presignedUrls[i],
+      ])
+      console.log(resultsWithStreams)
+      return res.json({ resultsWithStreams })
     } catch (err) {
       return res.status(500).send(err)
     }

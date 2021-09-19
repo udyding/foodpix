@@ -6,7 +6,7 @@ export default async (filePath) => {
     const [result] = await client.labelDetection(filePath)
     const labels = result.labelAnnotations
       .slice(0, 10)
-      .map((label) => label.description)
+      .map((label) => label.description.toLowerCase())
     return labels
   } catch (err) {
     console.log(err)

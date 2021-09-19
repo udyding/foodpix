@@ -3,7 +3,6 @@ import axios from 'axios'
 import Picture from '../components/Picture'
 
 export async function getServerSideProps(context) {
-  const options = { headers: { cookie: context.req.headers.cookie } }
   try {
     const res = await axios({
       method: 'GET',
@@ -48,8 +47,14 @@ const Home = ({ data }): JSX.Element => {
             <a href="/addPicture">New picture</a>
           </button>
           <h1>My gallery</h1>
-          {data.usersPictures.map((picture) => (
-            <Picture id={picture._id} title={picture.title} />
+          {data.picturesWithStreams.map((picture) => (
+            <>
+              <Picture
+                id={picture[0]._id}
+                title={picture[0].title}
+                stream={picture[1]}
+              />
+            </>
           ))}
           <button onClick={() => signOut()}>Sign out</button>
         </>

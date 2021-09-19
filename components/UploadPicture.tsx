@@ -31,26 +31,29 @@ const UploadPicture = () => {
   const [file, setFile] = useState<FileList | null>(null) // FileList from TypeScript
   const [title, setTitle] = useState<string>('')
   const [description, setDescription] = useState<string>('')
-  const [images, setImages] = useState([])
+  const [restaurant, setRestaurant] = useState<string>('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const submitPictureForm = async (event) => {
     event.preventDefault()
+    setLoading(true)
     if (!file) {
       throw new Error('Please select a file.')
     }
     try {
-      const result = await postPictureFormData({
+      await postPictureFormData({
         picture: file,
         title,
         description,
       })
-      setImages([result.image, ...images])
       router.push('/')
     } catch (err) {
       throw new Error(
         'Invalid file input: make sure file is jpeg, png, or gif and less than 1MB in size.'
       )
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -66,7 +69,7 @@ const UploadPicture = () => {
           id="title"
           name="title"
           type="text"
-          placeholder="Dish Title"
+          placeholder="Strawberry Milkshake"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
@@ -76,11 +79,21 @@ const UploadPicture = () => {
           id="description"
           name="description"
           type="text"
-          placeholder="Tell us more!"
+          placeholder="A milkshake good enough for three!"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
         />
+        <br></br>
+        <input
+          id="restaurant"
+          name="restaurant"
+          type="text"
+          placeholder="Pop's Chock'lit Shoppe"
+          value={restaurant}
+          onChange={(e) => setRestaurant(e.target.value)}
+          required
+        ></input>
         <br></br>
         <label>Upload file (max 1mb)</label>
         <input
@@ -91,7 +104,9 @@ const UploadPicture = () => {
           accept="image/*"
         />
         <br></br>
-        <button type="submit">Send</button>
+        <button disabled={loading} type="submit">
+          Send
+        </button>
       </form>
     </>
   )
