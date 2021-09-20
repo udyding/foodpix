@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { PictureModel } from '../../../models/Picture'
 import dbConnect from '../../../middleware/dbConnect'
 import { getPresignedUrl } from '../managePictures/s3PictureService'
@@ -15,14 +16,14 @@ export const config = {
 
 const findPicturesFromKeywords = async (keywords) => {
   await dbConnect()
-  // find documents that contain at least 3 common keywords
+  // find documents that contain at least 5 common keywords
   const pictures = await PictureModel.aggregate([
-    { $match: { 'keywords.2': { $exists: true } } },
+    { $match: { 'keywords.4': { $exists: true } } },
     {
       $redact: {
         $cond: [
           {
-            $gte: [{ $size: { $setIntersection: ['$keywords', keywords] } }, 3],
+            $gte: [{ $size: { $setIntersection: ['$keywords', keywords] } }, 5],
           },
           '$$KEEP',
           '$$PRUNE',
@@ -33,7 +34,10 @@ const findPicturesFromKeywords = async (keywords) => {
   return pictures
 }
 
-export default async (req, res) => {
+export default async function (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> {
   if (req.method !== 'POST') {
     return res.status(405).end()
   }
@@ -63,12 +67,11 @@ export default async (req, res) => {
         const presignedUrl = await getPresignedUrl(searchResults[i].fileName)
         presignedUrls.push(presignedUrl)
       }
-      const resultsWithStreams = searchResults.map((pictureDetails, i) => [
-        pictureDetails,
-        presignedUrls[i],
-      ])
-      console.log(resultsWithStreams)
-      return res.json({ resultsWithStreams })
+      const picturesWithPresignedUrls = searchResults.map(
+        (pictureDetails, i) => [pictureDetails, presignedUrls[i]]
+      )
+      console.log(picturesWithPresignedUrls)
+      return res.json({ picturesWithPresignedUrls })
     } catch (err) {
       return res.status(500).send(err)
     }

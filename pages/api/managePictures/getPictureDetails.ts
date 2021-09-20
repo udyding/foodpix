@@ -1,7 +1,11 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { PictureModel } from '../../../models/Picture'
 import dbConnect from '../../../middleware/dbConnect'
 
-export default async (req, res) => {
+export default async function (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> {
   const { pictureId } = req.query
 
   await dbConnect()

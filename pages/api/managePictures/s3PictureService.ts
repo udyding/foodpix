@@ -1,4 +1,5 @@
 import S3 from 'aws-sdk/clients/s3'
+import { ReadStream } from 'fs'
 
 const s3 = new S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -6,7 +7,10 @@ const s3 = new S3({
   region: process.env.AWS_BUCKET_REGION,
 })
 
-export const uploadPictureToS3 = async (fileContent, fileName) => {
+export const uploadPictureToS3 = async (
+  fileContent: ReadStream,
+  fileName: string
+): Promise<S3.ManagedUpload.SendData> => {
   try {
     const params = {
       Body: fileContent,
@@ -19,16 +23,7 @@ export const uploadPictureToS3 = async (fileContent, fileName) => {
   }
 }
 
-export const getPictureFromS3 = async (fileKey) => {
-  const params = {
-    Key: fileKey,
-    Bucket: process.env.AWS_BUCKET_NAME,
-  }
-  const readStream = s3.getObject(params).createReadStream()
-  return readStream
-}
-
-export const getPresignedUrl = async (fileKey) => {
+export const getPresignedUrl = async (fileKey: string): Promise<string> => {
   const params = {
     Key: fileKey,
     Bucket: process.env.AWS_BUCKET_NAME,

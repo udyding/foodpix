@@ -1,8 +1,76 @@
-import { signIn, signOut, useSession } from 'next-auth/client'
+import { ReactElement } from 'react'
+import { Container, Row, Button } from 'react-bootstrap'
+import { GetServerSideProps } from 'next'
+import { useSession, getSession } from 'next-auth/client'
 import axios from 'axios'
-import Picture from '../components/Picture'
+import Picture from 'components/Picture'
+import Layout from 'components/Layout'
+import Landing from 'components/Landing'
+import styles from 'styles/Home.module.css'
 
-export async function getServerSideProps(context) {
+type Props = {
+  readonly pictures: ReadonlyArray<
+    [
+      {
+        readonly _id: string
+        readonly title: string
+        readonly restaurant: string
+      },
+      string
+    ]
+  >
+}
+
+const Home = ({ pictures }: Props): ReactElement => {
+  const [session, loading] = useSession()
+  return (
+    <Layout>
+      {!session && !loading && (
+        <>
+          <Landing />
+        </>
+      )}
+      {session && (
+        <>
+          <h1>Welcome, {session.user.name}!</h1>
+          <br />
+          <Button variant="warning">
+            <a className={styles.addPicture} href="/addPicture">
+              Add new picture
+            </a>
+          </Button>
+          <br />
+          <h2 className={styles.myPictures}>My pictures</h2>
+
+          <Container className={styles.picturesContainer}>
+            <Row sm={1} md={2}>
+              {pictures.map((picture, i) => (
+                <Picture
+                  key={i}
+                  picture={picture[0]}
+                  presignedUrl={picture[1]}
+                />
+              ))}
+            </Row>
+          </Container>
+        </>
+      )}
+    </Layout>
+  )
+}
+
+export const getServerSideProps: GetServerSideProps<Props> = async (
+  context
+) => {
+  const session = await getSession(context)
+  if (!session) {
+    return {
+      props: {
+        pictures: [],
+      },
+    }
+  }
+
   try {
     const res = await axios({
       method: 'GET',
@@ -11,56 +79,16 @@ export async function getServerSideProps(context) {
         cookie: context.req.headers.cookie,
       },
     })
-    const data = res.data
+
     return {
       props: {
-        data: data,
+        pictures: res.data.picturesWithPresignedUrls,
       },
     }
   } catch (err) {
     console.log(err)
-    return { notFound: true }
+    return { props: { pictures: [] } }
   }
-}
-
-const Home = ({ data }): JSX.Element => {
-  const [session, loading] = useSession()
-  return (
-    <div>
-      <h1>Foodpix</h1>
-      {loading && <p>Loading..</p>}
-      {!session && (
-        <>
-          <button
-            onClick={() =>
-              signIn('google', { callbackUrl: 'http://localhost:3000/' })
-            }
-          >
-            Sign in
-          </button>
-        </>
-      )}
-      {session && (
-        <>
-          Welcome, {session.user.name}!<br />
-          <button>
-            <a href="/addPicture">New picture</a>
-          </button>
-          <h1>My gallery</h1>
-          {data.picturesWithStreams.map((picture) => (
-            <>
-              <Picture
-                id={picture[0]._id}
-                title={picture[0].title}
-                stream={picture[1]}
-              />
-            </>
-          ))}
-          <button onClick={() => signOut()}>Sign out</button>
-        </>
-      )}
-    </div>
-  )
 }
 
 export default Home

@@ -1,3 +1,5 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/client'
 import { PictureModel } from '../../../models/Picture'
 import dbConnect from '../../../middleware/dbConnect'
@@ -15,19 +17,19 @@ export const config = {
 }
 
 export const addPictureToDatabase = async (
-  user,
-  title,
-  description,
-  fileName,
-  labels
-) => {
+  user: Session,
+  title: string,
+  restaurant: string,
+  fileName: string,
+  labels: string[]
+): Promise<void> => {
   await dbConnect()
 
   // ensure given request is POST
   const newPicture = new PictureModel({
     owner: user.id,
     title: title,
-    description: description,
+    restaurant: restaurant,
     fileName: fileName,
     keywords: labels,
   })
@@ -42,7 +44,10 @@ export const addPictureToDatabase = async (
   })
 }
 
-export default async (req, res) => {
+export default async function (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> {
   const user = await getSession({ req })
   if (!user) {
     return res.json({ error: 'not logged in' })
@@ -68,13 +73,13 @@ export default async (req, res) => {
     try {
       const filePath = file.picture.path
       const fileContent = fs.createReadStream(filePath)
-      const newFileName = `${uuidv4()}` // prevents duplicate file names
+      const newFileName = uuidv4() // prevents duplicate file names
       const data = await uploadPictureToS3(fileContent, newFileName)
       const labels = await getVisionLabels(filePath) // get google vision API labels
       await addPictureToDatabase(
         user,
         fields.title,
-        fields.description,
+        fields.restaurant,
         newFileName,
         labels
       )

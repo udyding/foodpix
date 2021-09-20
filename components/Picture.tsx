@@ -1,16 +1,27 @@
-import Link from 'next/link'
+import { ReactElement } from 'react'
+import { Col, Card } from 'react-bootstrap'
 
-const Picture = ({ id, title, stream }) => {
-  return (
-    <div>
-      <Link href={`/picture/${id}`}>
-        <a>
-          <h3>{title}</h3>
-          <img src={stream}></img>
-        </a>
-      </Link>
-    </div>
-  )
+type Props = {
+  readonly picture: {
+    title: string
+    restaurant: string
+  }
+  readonly presignedUrl: string
 }
 
-export default Picture
+export default function Picture({
+  picture: { title, restaurant },
+  presignedUrl,
+}: Props): ReactElement {
+  return (
+    <Col style={{ marginBottom: '24px' }}>
+      <Card>
+        <Card.Img variant="top" src={presignedUrl} />
+        <Card.Body>
+          <Card.Title>{title}</Card.Title>
+          <Card.Text>{restaurant}</Card.Text>
+        </Card.Body>
+      </Card>
+    </Col>
+  )
+}

@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, FunctionComponent } from 'react'
+import { Form, Button, Alert } from 'react-bootstrap'
 import axios from 'axios'
 import { useRouter } from 'next/router'
 
-const postPictureFormData = async ({ picture, title, description }) => {
+const postPictureFormData = async ({ picture, title, restaurant }) => {
   const formData = new FormData()
   formData.append('picture', picture)
   formData.append('title', title)
-  formData.append('description', description)
+  formData.append('restaurant', restaurant)
 
-  console.log(formData)
   try {
     // send form data to API endpoint to be sent to AWS
     const response = await axios({
@@ -24,20 +24,22 @@ const postPictureFormData = async ({ picture, title, description }) => {
   } catch (err) {
     // handle error
     console.log(err)
+    throw new Error('Unable to add picture')
   }
 }
 
-const UploadPicture = () => {
+const UploadPicture: FunctionComponent = () => {
   const [file, setFile] = useState<FileList | null>(null) // FileList from TypeScript
   const [title, setTitle] = useState<string>('')
-  const [description, setDescription] = useState<string>('')
   const [restaurant, setRestaurant] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const submitPictureForm = async (event) => {
     event.preventDefault()
     setLoading(true)
+    setError('')
     if (!file) {
       throw new Error('Please select a file.')
     }
@@ -45,11 +47,11 @@ const UploadPicture = () => {
       await postPictureFormData({
         picture: file,
         title,
-        description,
+        restaurant,
       })
       router.push('/')
     } catch (err) {
-      throw new Error(
+      setError(
         'Invalid file input: make sure file is jpeg, png, or gif and less than 1MB in size.'
       )
     } finally {
@@ -64,50 +66,56 @@ const UploadPicture = () => {
 
   return (
     <>
-      <form onSubmit={submitPictureForm}>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          placeholder="Strawberry Milkshake"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <br></br>
-        <input
-          id="description"
-          name="description"
-          type="text"
-          placeholder="A milkshake good enough for three!"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-        />
-        <br></br>
-        <input
-          id="restaurant"
-          name="restaurant"
-          type="text"
-          placeholder="Pop's Chock'lit Shoppe"
-          value={restaurant}
-          onChange={(e) => setRestaurant(e.target.value)}
-          required
-        ></input>
-        <br></br>
-        <label>Upload file (max 1mb)</label>
-        <input
-          type="file"
-          id="file"
-          name="file"
-          onChange={selectedFile}
-          accept="image/*"
-        />
-        <br></br>
-        <button disabled={loading} type="submit">
-          Send
-        </button>
-      </form>
+      <div style={{ maxWidth: '800px', marginLeft: '50px' }}>
+        <h1>Add a picture</h1>
+        <br />
+        <Form onSubmit={submitPictureForm}>
+          <Form.Group className="mb-3">
+            <Form.Label>Dish title</Form.Label>
+            <Form.Control
+              size="lg"
+              id="title"
+              name="title"
+              type="text"
+              placeholder="E.g.: Strawberry Milkshake"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={60}
+              required
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Location</Form.Label>
+            <Form.Control
+              size="lg"
+              id="restaurant"
+              name="restaurant"
+              type="text"
+              placeholder="E.g.: Pop's Chock'lit Shoppe"
+              value={restaurant}
+              onChange={(e) => setRestaurant(e.target.value)}
+              maxLength={60}
+              required
+            />
+          </Form.Group>
+          <Form.Group controlId="formFileLg" className="mb-3">
+            <Form.Label>Upload picture (max 1mb)</Form.Label>
+            <Form.Control
+              type="file"
+              size="lg"
+              id="file"
+              name="file"
+              onChange={selectedFile}
+              accept="image/*"
+            />
+          </Form.Group>
+          <Button size="lg" variant="warning" disabled={loading} type="submit">
+            Send
+          </Button>
+        </Form>
+        <br />
+        {error && <Alert variant="danger">{error}</Alert>}
+      </div>
     </>
   )
 }

@@ -1,10 +1,14 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { PictureModel } from '../../../models/Picture'
 import dbConnect from '../../../middleware/dbConnect'
 import { getPresignedUrl } from '../managePictures/s3PictureService'
 
-export default async (req, res) => {
+export default async function (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> {
   const { keyword } = req.query
-  const decodedKeyword = decodeURIComponent(keyword)
+  const decodedKeyword = decodeURIComponent(keyword as string)
 
   await dbConnect()
   let searchResults
@@ -23,9 +27,9 @@ export default async (req, res) => {
     const presignedUrl = await getPresignedUrl(searchResults[i].fileName)
     presignedUrls.push(presignedUrl)
   }
-  const resultsWithStreams = searchResults.map((pictureDetails, i) => [
+  const picturesWithPresignedUrls = searchResults.map((pictureDetails, i) => [
     pictureDetails,
     presignedUrls[i],
   ])
-  return res.json({ resultsWithStreams })
+  return res.json({ picturesWithPresignedUrls })
 }

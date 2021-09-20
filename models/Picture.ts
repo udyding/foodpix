@@ -9,7 +9,7 @@ const pictureSchema = new Schema<Picture>(
       required: true,
     },
     title: { type: String, required: true },
-    description: String,
+    restaurant: { type: String, required: true },
     fileName: { type: String, required: true },
     keywords: [{ type: String }],
   },

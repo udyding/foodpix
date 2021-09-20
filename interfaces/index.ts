@@ -3,7 +3,7 @@ import { Types } from 'mongoose'
 export type Picture = {
   owner: Types.ObjectId
   title: string
-  description: string
+  restaurant: string
   fileName: string
   keywords: string[]
 }

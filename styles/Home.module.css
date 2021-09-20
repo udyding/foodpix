@@ -1,0 +1,14 @@
+.addPicture {
+  text-decoration: none;
+  font-size: 22px;
+  color: #222529;
+}
+
+.myPictures {
+  margin: 25px 0 25px 0;
+  text-align: center;
+}
+
+.picturesContainer {
+  padding: 0;
+}

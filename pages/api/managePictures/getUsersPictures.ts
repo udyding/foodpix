@@ -1,9 +1,13 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from 'next-auth/client'
 import { PictureModel } from '../../../models/Picture'
 import { getPresignedUrl } from './s3PictureService'
 import dbConnect from '../../../middleware/dbConnect'
 
-export default async (req, res) => {
+export default async function (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> {
   const user = await getSession({ req })
 
   await dbConnect()
@@ -20,10 +24,10 @@ export default async (req, res) => {
     const presignedUrl = await getPresignedUrl(usersPictures[i].fileName)
     presignedUrls.push(presignedUrl)
   }
-  const picturesWithStreams = usersPictures.map((pictureDetails, i) => [
+  const picturesWithPresignedUrls = usersPictures.map((pictureDetails, i) => [
     pictureDetails,
     presignedUrls[i],
   ])
 
-  return res.json({ picturesWithStreams })
+  return res.json({ picturesWithPresignedUrls })
 }

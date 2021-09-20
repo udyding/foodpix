@@ -1,0 +1,28 @@
+.container {
+  padding: 50px;
+  margin-top: 100px;
+  margin-right: 100px;
+}
+
+.content {
+  top: 30%;
+  margin-left: 100px;
+}
+
+.title {
+  font-size: 50px;
+  font-weight: normal;
+  max-width: 800px;
+}
+
+.subtitle {
+  margin-top: 30px;
+  font-weight: 300;
+  color: gray;
+}
+
+.illustration {
+  width: 30%;
+  height: 30%;
+  float: right;
+}

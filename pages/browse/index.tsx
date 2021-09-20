@@ -1,9 +1,12 @@
 import axios from 'axios'
 import React, { useState, useEffect } from 'react'
-import { Row, Col } from 'react-bootstrap'
-import Picture from '../../components/Picture'
+import { Row, Form, Button, Container, Alert } from 'react-bootstrap'
+import { GetServerSideProps } from 'next'
+import Picture from 'components/Picture'
+import Layout from 'components/Layout'
+import styles from '/styles/Browse.module.css'
 
-export async function getServerSideProps(context) {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const res = await axios({
       method: 'GET',
@@ -12,15 +15,14 @@ export async function getServerSideProps(context) {
         cookie: context.req.headers.cookie,
       },
     })
-    const data = res.data
     return {
       props: {
-        data: data,
+        pictures: res.data.picturesWithPresignedUrls,
       },
     }
   } catch (err) {
     console.log(err)
-    return { notFound: true }
+    return { props: { pictures: [] } }
   }
 }
 
@@ -38,7 +40,7 @@ const getSimilarPictures = async ({ picture }) => {
         'Content-Type': 'multipart/form-data',
       },
     })
-    return response.data.resultsWithStreams
+    return response.data.picturesWithPresignedUrls
     // handle success
   } catch (err) {
     // handle error
@@ -46,16 +48,30 @@ const getSimilarPictures = async ({ picture }) => {
   }
 }
 
-const Browse = ({ data }): JSX.Element => {
+type Props = {
+  pictures: Array<
+    [
+      {
+        readonly _id: string
+        readonly title: string
+        readonly restaurant: string
+      },
+      string
+    ]
+  >
+}
+
+const Browse = ({ pictures: picturesData }: Props): JSX.Element => {
   const [file, setFile] = useState<FileList | null>(null) // FileList from TypeScript
-  const scrollAmount = 3
+  const scrollAmount = 12
   const [keyword, setKeyword] = useState<string>('')
-  const [pictures, setPictures] = useState()
+  const [pictures, setPictures] = useState([])
   const [loading, setLoading] = useState(false)
   const [showMore, setShowMore] = useState(true)
   const [visiblePictures, setVisiblePictures] = useState(scrollAmount)
   const [index, setIndex] = useState(0)
   const [picturesExist, setPicturesExist] = useState(true)
+  const [error, setError] = useState('')
 
   const handleShowMorePictures = () => {
     const newIndex = index + scrollAmount
@@ -66,12 +82,11 @@ const Browse = ({ data }): JSX.Element => {
 
   useEffect(() => {
     const getAllPicturesFirst = async () => {
-      const allPictures = data.picturesWithStreams
-      setPictures(allPictures)
-      if (allPictures.length == 0) {
+      setPictures(picturesData)
+      if (picturesData.length == 0) {
         setPicturesExist(false)
       }
-      setIndex(allPictures.length)
+      setIndex(picturesData.length)
     }
     getAllPicturesFirst()
   }, [])
@@ -80,9 +95,10 @@ const Browse = ({ data }): JSX.Element => {
     setPicturesExist(true)
     event.preventDefault()
     setLoading(true)
+    setError('')
+
     if (!/^[a-zA-Z0-9 ]*/.test(keyword)) {
-      console.log(keyword)
-      throw new Error('Keyword can only contain letters and numbers')
+      setError('Keyword can only contain letters and numbers')
     }
     try {
       const encodedKeyword = encodeURIComponent(keyword.trim().toLowerCase())
@@ -90,17 +106,17 @@ const Browse = ({ data }): JSX.Element => {
         method: 'GET',
         url: `http://localhost:3000/api/browsePictures/searchByKeyword?keyword=${encodedKeyword}`,
       })
-      const picturesWithStreams = response.data.resultsWithStreams
-      console.log(picturesWithStreams)
-      setPictures(picturesWithStreams)
-      setIndex(picturesWithStreams.length)
+      const picturesWithPresignedUrls = response.data.picturesWithPresignedUrls
+      setPictures(picturesWithPresignedUrls)
+      setIndex(picturesWithPresignedUrls.length)
       setVisiblePictures(scrollAmount)
-      setShowMore(picturesWithStreams.length > scrollAmount)
-      if (picturesWithStreams.length == 0) {
+      setShowMore(picturesWithPresignedUrls.length > scrollAmount)
+      if (picturesWithPresignedUrls.length == 0) {
         setPicturesExist(false)
       }
     } catch (err) {
       console.log(err)
+      setError('Error: could not complete keyword search')
     } finally {
       setLoading(false)
     }
@@ -110,22 +126,24 @@ const Browse = ({ data }): JSX.Element => {
     setPicturesExist(true)
     event.preventDefault()
     setLoading(true)
+    setError('')
+
     if (!file) {
-      throw new Error('Please select a file.')
+      setError('Please select a file.')
     }
     try {
-      const picturesWithStreams = await getSimilarPictures({
+      const picturesWithPresignedUrls = await getSimilarPictures({
         picture: file,
       })
-      setPictures(picturesWithStreams)
-      setIndex(picturesWithStreams.length)
+      setPictures(picturesWithPresignedUrls)
+      setIndex(picturesWithPresignedUrls.length)
       setVisiblePictures(scrollAmount)
-      setShowMore(picturesWithStreams.length > scrollAmount)
-      if (picturesWithStreams.length == 0) {
+      setShowMore(picturesWithPresignedUrls.length > scrollAmount)
+      if (picturesWithPresignedUrls.length == 0) {
         setPicturesExist(false)
       }
     } catch (err) {
-      throw new Error(
+      setError(
         'Invalid file input: make sure file is jpeg, png, or gif and less than 1MB in size.'
       )
     } finally {
@@ -140,64 +158,78 @@ const Browse = ({ data }): JSX.Element => {
 
   return (
     <>
-      <div>
-        <h1>Foodpix</h1>
-        <h1>Browse for food pictures</h1>
-        <h3>Search by:</h3>
-        <br></br>
-        <form onSubmit={submitKeywordSearch}>
-          <input
-            id="keyword"
-            name="keyword"
-            type="text"
-            placeholder="Baozi"
-            onChange={(e) => setKeyword(e.target.value)}
-          ></input>
-          <button disabled={loading} type="submit">
-            Search
-          </button>
-        </form>
-        <br></br>
-        <form onSubmit={submitImageSearch}>
-          <label>Upload file (max 1mb)</label>
-          <input
-            type="file"
-            id="file"
-            name="file"
-            onChange={selectedFile}
-            accept="image/*"
-          />
-          <button disabled={loading} type="submit">
-            Search
-          </button>
-        </form>
+      <Layout>
+        <h1>Browse pictures</h1>
+        <br />
+        <div className={styles.searchForm}>
+          <h3 className={styles.searchBy}>Search by:</h3>
+          <div className={styles.searchMethods}>
+            <div className={styles.searchByKeyword}>
+              <Form onSubmit={submitKeywordSearch}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Keyword</Form.Label>
+                  <Form.Control
+                    id="keyword"
+                    name="keyword"
+                    type="text"
+                    placeholder="E.g.: Baozi"
+                    onChange={(e) => setKeyword(e.target.value)}
+                  ></Form.Control>
+                </Form.Group>
+                <Button variant="warning" disabled={loading} type="submit">
+                  Search
+                </Button>
+              </Form>
+            </div>
+            <div className={styles.or}>
+              <h2>or</h2>
+            </div>
+            <div className={styles.searchByImage}>
+              <Form onSubmit={submitImageSearch}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Image (max 1mb)</Form.Label>
+                  <Form.Control
+                    type="file"
+                    id="file"
+                    name="file"
+                    onChange={selectedFile}
+                    accept="image/*"
+                  />
+                </Form.Group>
+                <Button variant="warning" disabled={loading} type="submit">
+                  Search
+                </Button>
+              </Form>
+            </div>
+          </div>
+          {error && <Alert variant="danger">{error}</Alert>}
+        </div>
+
         {!picturesExist && <h1>No pictures yet!</h1>}
         {picturesExist && (
           <>
-            <Row className="justify-content-center">
-              {pictures &&
-                pictures.slice(0, visiblePictures).map((picture) => {
-                  return (
-                    <div className={{ display: 'flex', alignItems: 'center' }}>
-                      <Col md={4}>
-                        <Picture
-                          id={picture[0]._id}
-                          title={picture[0].title}
-                          stream={picture[1]}
-                        />
-                      </Col>
-                    </div>
-                  )
-                })}
-            </Row>
-            <div>
-              {showMore && pictures && pictures.length > scrollAmount && (
-                <button onClick={handleShowMorePictures}>Load more</button>
-              )}
-            </div>
+            <Container className={styles.picturesContainer}>
+              <Row sm={1} md={2}>
+                {pictures &&
+                  pictures
+                    .slice(0, visiblePictures)
+                    .map((picture, i) => (
+                      <Picture
+                        key={i}
+                        picture={picture[0]}
+                        presignedUrl={picture[1]}
+                      />
+                    ))}
+              </Row>
+              <div>
+                {showMore && pictures && pictures.length > scrollAmount && (
+                  <button onClick={handleShowMorePictures}>Load more</button>
+                )}
+              </div>
+            </Container>
           </>
         )}
-      </div>
+      </Layout>
     </>
   )
 }

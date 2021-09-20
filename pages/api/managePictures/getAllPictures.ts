@@ -1,8 +1,12 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { PictureModel } from '../../../models/Picture'
 import { getPresignedUrl } from './s3PictureService'
 import dbConnect from '../../../middleware/dbConnect'
 
-export default async (req, res) => {
+export default async function (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> {
   await dbConnect()
 
   const allPictures = await PictureModel.find().lean() // find all pictures with owner id matching
@@ -13,10 +17,10 @@ export default async (req, res) => {
     const presignedUrl = await getPresignedUrl(allPictures[i].fileName)
     presignedUrls.push(presignedUrl)
   }
-  const picturesWithStreams = allPictures.map((pictureDetails, i) => [
+  const picturesWithPresignedUrls = allPictures.map((pictureDetails, i) => [
     pictureDetails,
     presignedUrls[i],
   ])
 
-  return res.json({ picturesWithStreams })
+  return res.json({ picturesWithPresignedUrls })
 }

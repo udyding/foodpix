@@ -1,0 +1,33 @@
+.searchForm {
+  border-radius: 25px;
+  background: #f8f0e3;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.searchBy {
+  text-align: center;
+}
+
+.searchMethods {
+  display: flex;
+}
+
+.searchByKeyword {
+  flex: 1;
+  margin: 15px;
+}
+
+.or {
+  flex: 0;
+  margin: 15px;
+}
+
+.searchByImage {
+  flex: 1;
+  margin: 15px;
+}
+
+.picturesContainer {
+  padding: 0;
+}
