@@ -8,7 +8,8 @@
     "format": "prettier --write .",
     "lint": "eslint . --ext ts --ext tsx --ext js",
     "test": "jest",
-    "test-all": "yarn lint && yarn type-check && yarn test"
+    "test-all": "yarn lint && yarn type-check && yarn test",
+    "ci": "start-server-and-test dev http://localhost:3000 test"
   },
   "husky": {
     "hooks": {
@@ -27,19 +28,26 @@
     "aws-sdk": "^2.988.0",
     "axios": "^0.21.4",
     "bootstrap": "^5.1.0",
+    "chai": "^4.3.4",
     "file-type": "^16.5.3",
     "formidable": "^1.2.2",
     "fs": "0.0.1-security",
     "husky": "^7.0.2",
-    "mongoose": "^6.0.5",
+    "mongodb-memory-server": "^6.9.6",
+    "mongoose": "^5.13.9",
     "next": "latest",
     "next-auth": "^3.29.0",
     "react": "^17.0.2",
     "react-bootstrap": "^2.0.0-beta.6",
     "react-dom": "^17.0.2",
+    "sinon": "^11.1.2",
+    "sinon-chai": "^3.7.0",
+    "start-server-and-test": "^1.14.0",
+    "supertest": "^6.1.6",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@babel/plugin-transform-modules-commonjs": "^7.15.4",
     "@testing-library/react": "^11.2.5",
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.25",

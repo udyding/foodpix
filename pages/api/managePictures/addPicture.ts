@@ -42,6 +42,7 @@ export const addPictureToDatabase = async (
     console.log(doc)
     /* eslint-enable no-console */
   })
+  return newPicture
 }
 
 export default async function (
@@ -74,9 +75,9 @@ export default async function (
       const filePath = file.picture.path
       const fileContent = fs.createReadStream(filePath)
       const newFileName = uuidv4() // prevents duplicate file names
-      const data = await uploadPictureToS3(fileContent, newFileName)
+      await uploadPictureToS3(fileContent, newFileName)
       const labels = await getVisionLabels(filePath) // get google vision API labels
-      await addPictureToDatabase(
+      const newPicture = await addPictureToDatabase(
         user,
         fields.title,
         fields.restaurant,
@@ -85,7 +86,7 @@ export default async function (
       )
       const deleteFileFromBucketFolder = util.promisify(fs.unlink)
       await deleteFileFromBucketFolder(filePath)
-      return res.status(200).send(data)
+      return res.status(200).send(newPicture)
     } catch (err) {
       return res.status(500).send(err)
     }
