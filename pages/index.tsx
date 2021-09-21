@@ -41,7 +41,11 @@ const Home = ({ pictures }: Props): ReactElement => {
           </Button>
           <br />
           <h2 className={styles.myPictures}>My pictures</h2>
-
+          {pictures.length === 0 && (
+            <>
+              <h3>No pictures yet!</h3>
+            </>
+          )}
           <Container className={styles.picturesContainer}>
             <Row sm={1} md={2}>
               {pictures.map((picture, i) => (
