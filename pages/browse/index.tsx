@@ -10,7 +10,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const res = await axios({
       method: 'GET',
-      url: 'http://localhost:3000/api/managePictures/getAllPictures',
+      url: '/api/managePictures/getAllPictures',
       headers: {
         cookie: context.req.headers.cookie,
       },
@@ -34,7 +34,7 @@ const getSimilarPictures = async ({ picture }) => {
     // send form data to API endpoint to be sent to AWS
     const response = await axios({
       method: 'POST',
-      url: 'http://localhost:3000/api/browsePictures/searchByImage',
+      url: '/api/browsePictures/searchByImage',
       data: formData,
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -104,7 +104,7 @@ const Browse = ({ pictures: picturesData }: Props): JSX.Element => {
       const encodedKeyword = encodeURIComponent(keyword.trim().toLowerCase())
       const response = await axios({
         method: 'GET',
-        url: `http://localhost:3000/api/browsePictures/searchByKeyword?keyword=${encodedKeyword}`,
+        url: `/api/browsePictures/searchByKeyword?keyword=${encodedKeyword}`,
       })
       const picturesWithPresignedUrls = response.data.picturesWithPresignedUrls
       setPictures(picturesWithPresignedUrls)

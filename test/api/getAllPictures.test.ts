@@ -47,9 +47,7 @@ describe.only('GET /api/managePictures/getAllPictures', () => {
       const mockDbConnect = jest.fn()
 
       // will run the function and return mocked presigned url
-      const req = request('http://localhost:3000').get(
-        '/api/managePictures/getAllPictures'
-      )
+      const req = request('/').get('/api/managePictures/getAllPictures')
       req
         .expect((res) => {
           expect(res.body).to.equal({})

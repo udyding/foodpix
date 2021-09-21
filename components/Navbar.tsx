@@ -23,18 +23,14 @@ const Header = (): ReactElement => {
             {session ? (
               <Button
                 variant="outline-warning"
-                onClick={() =>
-                  signOut({ callbackUrl: 'http://localhost:3000/' })
-                }
+                onClick={() => signOut({ callbackUrl: '/' })}
               >
                 Sign out
               </Button>
             ) : (
               <Button
                 variant="outline-warning"
-                onClick={() =>
-                  signIn('google', { callbackUrl: 'http://localhost:3000/' })
-                }
+                onClick={() => signIn('google', { callbackUrl: '/' })}
               >
                 Sign in
               </Button>
