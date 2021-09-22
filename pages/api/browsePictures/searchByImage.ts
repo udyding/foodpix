@@ -70,7 +70,6 @@ export default async function (
       const picturesWithPresignedUrls = searchResults.map(
         (pictureDetails, i) => [pictureDetails, presignedUrls[i]]
       )
-      console.log(picturesWithPresignedUrls)
       return res.json({ picturesWithPresignedUrls })
     } catch (err) {
       return res.status(500).send(err)

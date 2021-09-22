@@ -4,7 +4,6 @@ import { signIn, signOut, useSession } from 'next-auth/client'
 
 const Header = (): ReactElement => {
   const [session] = useSession()
-  console.log(session)
   return (
     <>
       <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
