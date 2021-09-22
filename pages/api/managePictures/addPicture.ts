@@ -4,11 +4,9 @@ import { getSession } from 'next-auth/client'
 import { PictureModel } from '../../../models/Picture'
 import dbConnect from '../../../middleware/dbConnect'
 import getVisionLabels from '../getPictureLabels/getVisionLabels'
-import { uploadPictureToS3 } from './s3PictureService'
-import formidable from 'formidable'
-import fs from 'fs'
+import { getPresignedUrl, uploadPictureToS3 } from './s3PictureService'
 import { v4 as uuidv4 } from 'uuid'
-import util from 'util'
+import asyncBusboy from 'async-busboy'
 
 export const config = {
   api: {
@@ -57,38 +55,29 @@ export default async function (
   if (req.method !== 'POST') {
     return res.status(405).end()
   }
+  const { files, fields } = await asyncBusboy(req)
+  const file = files[0]
+  const fileType = file && file.mimeType
+  const acceptedFileExtensions = /(JPG|jpg|JPEG|jpeg|GIF|gif|PNG|png)$/ // need to end in
+  if (!acceptedFileExtensions.test(fileType)) {
+    return res.status(500).send('Invalid file type: only jpeg, png, and gif')
+  }
+  try {
+    const newFileName = uuidv4() // prevents duplicate file names
+    await uploadPictureToS3(file, newFileName)
+    const presignedUrl = await getPresignedUrl(newFileName)
 
-  const form = new formidable()
-  form.uploadDir = 'bucketFolder/'
-  form.keepExtensions = true
-  form.maxFileSize = 1 * 1024 * 1024 // max 1MB
-  form.parse(req, async (err, fields, file) => {
-    if (err) {
-      return res.status(500).send(err)
-    }
-    const fileType = file && file.picture && file.picture.type
-    const acceptedFileExtensions = /(JPG|jpg|JPEG|jpeg|GIF|gif|PNG|png)$/ // need to end in
-    if (!acceptedFileExtensions.test(fileType)) {
-      return res.status(500).send('Invalid file type: only jpeg, png, and gif')
-    }
-    try {
-      const filePath = file.picture.path
-      const fileContent = fs.createReadStream(filePath)
-      const newFileName = uuidv4() // prevents duplicate file names
-      await uploadPictureToS3(fileContent, newFileName)
-      const labels = await getVisionLabels(filePath) // get google vision API labels
-      const newPicture = await addPictureToDatabase(
-        user,
-        fields.title,
-        fields.restaurant,
-        newFileName,
-        labels
-      )
-      const deleteFileFromBucketFolder = util.promisify(fs.unlink)
-      await deleteFileFromBucketFolder(filePath)
-      return res.status(200).send(newPicture)
-    } catch (err) {
-      return res.status(500).send(err)
-    }
-  })
+    const labels = await getVisionLabels(presignedUrl) // get google vision API labels
+    const newPicture = await addPictureToDatabase(
+      user,
+      fields.title,
+      fields.restaurant,
+      newFileName,
+      labels
+    )
+    return res.status(200).send(newPicture)
+  } catch (err) {
+    console.log(err)
+    return res.status(500).send(err)
+  }
 }

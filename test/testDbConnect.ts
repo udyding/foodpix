@@ -1,7 +1,6 @@
 import mongoose from 'mongoose'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 const PictureModel = require('../models/Picture')
-import { Session } from 'next-auth/client'
 
 const memoryDb = new MongoMemoryServer()
 

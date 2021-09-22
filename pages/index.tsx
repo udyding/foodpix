@@ -78,7 +78,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (
   try {
     const res = await axios({
       method: 'GET',
-      url: '/api/managePictures/getUsersPictures',
+      url: `${process.env.ADDRESS}/api/managePictures/getUsersPictures`,
       headers: {
         cookie: context.req.headers.cookie,
       },

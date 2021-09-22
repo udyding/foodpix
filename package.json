@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@google-cloud/vision": "^2.4.0",
+    "async-busboy": "^1.1.0",
     "aws-sdk": "^2.988.0",
     "axios": "^0.21.4",
     "bootstrap": "^5.1.0",

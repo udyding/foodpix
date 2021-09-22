@@ -6,6 +6,7 @@ import { getPresignedUrl } from '../managePictures/s3PictureService'
 import getVisionLabels from '../getPictureLabels/getVisionLabels'
 import formidable from 'formidable'
 import fs from 'fs'
+import path from 'path'
 import util from 'util'
 
 export const config = {
@@ -43,7 +44,7 @@ export default async function (
   }
 
   const form = new formidable()
-  form.uploadDir = 'bucketFolder/'
+  form.uploadDir = path.join(process.cwd(), 'bucketFolder/')
   form.keepExtensions = true
   form.maxFileSize = 1 * 1024 * 1024 // max 1MB
   form.parse(req, async (err, fields, file) => {
